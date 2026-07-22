@@ -1,0 +1,38 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# NOTE: A WhatsApp bot is an always-on process with a persistent login, so it
+# needs a Background Worker + a Disk. Both require a PAID Render plan.
+# Render's FREE tier (Web Services) sleeps after 15 min and has no disk, which
+# would drop the WhatsApp connection and force a QR re-scan on every restart.
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Then set OPENAI_API_KEY and ALLOWED_NUMBER in the dashboard (they're marked
+# sync:false so they aren't stored in git).
+
+services:
+  - type: worker
+    name: whatsapp-openai-bot
+    runtime: node
+    plan: starter          # paid; workers are not available on the free tier
+    region: singapore      # closest to India; change if you prefer
+    buildCommand: npm install
+    startCommand: npm start
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false         # set in dashboard
+      - key: ALLOWED_NUMBER
+        sync: false         # set in dashboard
+      - key: AUTH_DIR
+        value: /data/auth
+      - key: DATA_DIR
+        value: /data/store
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: TIMEZONE
+        value: Asia/Kolkata
+      - key: DAILY_CRON
+        value: 0 10 * * *

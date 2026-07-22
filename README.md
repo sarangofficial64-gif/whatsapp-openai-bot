@@ -47,6 +47,16 @@ Once you see `✅ WhatsApp connected`, message the bot from the allowed number.
 5. Deploy, open the **Deploy Logs**, and scan the QR that appears there.
    > The volume keeps you logged in across future deploys.
 
+## Deploy on Render (alternative)
+
+Render works too, but a WhatsApp bot needs an always-on **Background Worker** +
+a **Disk**, both of which require a **paid** plan. Render's free tier (Web
+Services) sleeps after 15 min and has no persistent disk — not suitable here.
+
+1. Dashboard → **New → Blueprint** → pick this repo (uses [`render.yaml`](render.yaml)).
+2. Set `OPENAI_API_KEY` and `ALLOWED_NUMBER` in the dashboard.
+3. Deploy, open **Logs**, and scan the QR.
+
 ## Environment variables
 
 | Variable | Required | Default | Notes |
