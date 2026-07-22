@@ -45,4 +45,41 @@ export const config = {
   // Default: 10:00 every day, India Standard Time.
   dailyCron: process.env.DAILY_CRON || '0 10 * * *',
   timezone: process.env.TIMEZONE || 'Asia/Kolkata',
+
+  // Fixed daily reminders beyond the morning to-do prompt (cron + message).
+  dailyReminders: [
+    {
+      cron: process.env.KEKA_LOGIN_CRON || '45 9 * * *',
+      message: process.env.KEKA_LOGIN_MESSAGE || '🔔 Reminder: log in to Keka!',
+    },
+    {
+      cron: process.env.KEKA_LOGOUT_CRON || '30 18 * * *',
+      message: process.env.KEKA_LOGOUT_MESSAGE || '🔔 Reminder: log out of Keka!',
+      escalate: true,
+    },
+  ],
+
+  // Model used to transcribe voice notes.
+  transcribeModel: process.env.TRANSCRIBE_MODEL || 'whisper-1',
+
+  // Google Drive OAuth (optional — only needed if you use /driveauth).
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+
+  // Neon Postgres (optional — only needed for /store and knowledge search).
+  databaseUrl: process.env.DATABASE_URL || '',
+  embeddingModel: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
+
+  // LlamaParse (optional — better PDF text extraction, incl. scanned PDFs).
+  // Falls back to local parsing when not set.
+  llamaCloudApiKey: process.env.LLAMA_CLOUD_API_KEY || '',
+
+  // Small HTTP server used only for the Google OAuth redirect + health check.
+  port: Number(process.env.PORT || 8080),
+  // Public base URL Google redirects back to after consent.
+  // Local testing: leave default (http://localhost:PORT) and open the
+  // /driveauth link on the SAME machine running the bot.
+  // Railway/Render: set to your public service URL, e.g.
+  // https://your-app.up.railway.app
+  publicUrl: (process.env.PUBLIC_URL || `http://localhost:${Number(process.env.PORT || 8080)}`).replace(/\/$/, ''),
 };
