@@ -236,11 +236,11 @@ async function execTool(jid, name, args) {
         return { ok: false, error: 'Provide either minutes or when_iso' };
       }
       const reminder = await addReminder(jid, args.text, dueAt, Boolean(args.escalate));
-      return { ok: true, reminder };
+      return { ok: true, reminder: { id: reminder.id, text: reminder.text, due: formatDueDate(reminder.dueAt) } };
     }
     case 'list_reminders': {
       const reminders = (await getReminders(jid)).filter((r) => !r.fired);
-      return { reminders: reminders.map((r) => ({ id: r.id, text: r.text, dueAt: r.dueAt })) };
+      return { reminders: reminders.map((r) => ({ id: r.id, text: r.text, due: formatDueDate(r.dueAt) })) };
     }
     case 'cancel_reminder': {
       const removed = await cancelReminder(jid, args.id);
@@ -303,6 +303,25 @@ async function execTool(jid, name, args) {
     default:
       return { ok: false, error: `Unknown tool ${name}` };
   }
+}
+
+/**
+ * Formats a UTC ISO timestamp in the bot's local timezone. Reminders are
+ * always converted here, server-side — the model was unreliable at doing
+ * this arithmetic itself when reading times back (it correctly reasons
+ * about "2pm" when creating a reminder, but garbles the UTC offset when
+ * asked to relay a stored UTC timestamp back as local time).
+ */
+function formatDueDate(isoString) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: config.timezone,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(isoString));
 }
 
 function currentDateTime() {

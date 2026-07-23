@@ -117,6 +117,16 @@ function reminderList() {
 export async function addReminder(jid, text, dueAt, escalate = false) {
   await ensureLoaded();
   const list = reminderList();
+
+  // Guard against duplicate creation (e.g. the model issuing two tool calls
+  // for the same reminder in one turn) — same chat, same text, same due
+  // time, not yet fired: treat as the same reminder rather than adding another.
+  const normalizedText = String(text).trim().toLowerCase();
+  const existing = list.find(
+    (r) => r.jid === jid && !r.fired && r.dueAt === dueAt && r.text.trim().toLowerCase() === normalizedText
+  );
+  if (existing) return existing;
+
   const id = list.reduce((max, r) => Math.max(max, r.id), 0) + 1;
   const reminder = {
     id,
