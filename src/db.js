@@ -11,6 +11,10 @@ export function isDbConfigured() {
 function getPool() {
   if (!pool) {
     pool = new pg.Pool({ connectionString: config.databaseUrl, ssl: { rejectUnauthorized: false } });
+    // pg emits 'error' on the pool when an idle client hits a network error
+    // (common with serverless Postgres closing idle connections). Without a
+    // listener, that's an unhandled EventEmitter error and crashes the process.
+    pool.on('error', (err) => console.error('Unexpected Postgres pool error:', err));
   }
   return pool;
 }
@@ -36,7 +40,10 @@ async function ensureSchema() {
         CREATE INDEX IF NOT EXISTS knowledge_items_embedding_idx
         ON knowledge_items USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)
       `);
-    })();
+    })().catch((err) => {
+      schemaReady = null; // don't cache a transient failure forever — retry next call
+      throw err;
+    });
   }
   return schemaReady;
 }

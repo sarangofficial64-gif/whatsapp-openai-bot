@@ -23,3 +23,10 @@ startBot()
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled rejection:', reason);
 });
+
+// Some Baileys event callbacks (e.g. connection.update) are synchronous, so a
+// throw inside them wouldn't be caught by unhandledRejection above — without
+// this handler, Node's default behavior is to crash the whole process.
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception (bot stays up):', err);
+});

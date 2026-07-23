@@ -18,6 +18,18 @@ function required(name) {
 // Digits only, INCLUDING country code, no "+" or spaces.
 // Example for India (+91) 12345 67890  ->  "911234567890"
 const ALLOWED_NUMBER = required('ALLOWED_NUMBER').replace(/\D/g, '');
+if (!ALLOWED_NUMBER) {
+  console.error('❌ ALLOWED_NUMBER has no digits after stripping non-numeric characters — the bot would reject every message.');
+  process.exit(1);
+}
+
+// A PUBLIC_URL without a scheme silently breaks the OAuth redirect URI
+// (we just concatenate it), so catch that misconfiguration at startup
+// instead of failing mysteriously later inside the Google auth flow.
+if (process.env.PUBLIC_URL && !/^https?:\/\//i.test(process.env.PUBLIC_URL)) {
+  console.error(`❌ PUBLIC_URL is missing "http://" or "https://": "${process.env.PUBLIC_URL}"`);
+  process.exit(1);
+}
 
 export const config = {
   openaiApiKey: required('OPENAI_API_KEY'),

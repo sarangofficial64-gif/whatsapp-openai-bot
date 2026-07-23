@@ -10,19 +10,32 @@ import { config } from './config.js';
 
 const FILE = path.join(config.dataDir, 'data.json');
 
-let data = { todos: {}, settings: {} };
+let data = { todos: {}, settings: {}, reminders: [] };
 let loaded = false;
+let loadPromise = null;
 
 async function ensureLoaded() {
   if (loaded) return;
-  try {
-    const raw = await fs.readFile(FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    data = { todos: parsed.todos || {}, settings: parsed.settings || {} };
-  } catch {
-    data = { todos: {}, settings: {} };
+  // Cache the in-flight load so concurrent callers (e.g. a message handler
+  // and a cron tick landing at the same instant on a cold start) await the
+  // same read instead of each racing to overwrite `data`.
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      try {
+        const raw = await fs.readFile(FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        data = {
+          todos: parsed.todos || {},
+          settings: parsed.settings || {},
+          reminders: parsed.reminders || [],
+        };
+      } catch {
+        data = { todos: {}, settings: {}, reminders: [] };
+      }
+      loaded = true;
+    })();
   }
-  loaded = true;
+  return loadPromise;
 }
 
 async function persist() {

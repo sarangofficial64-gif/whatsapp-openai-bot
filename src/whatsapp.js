@@ -580,7 +580,13 @@ export async function startBot() {
           if (handled) continue;
         }
 
-        const reply = await withTimeout(generateReply(jid, text), 'AI reply', 60_000);
+        // Replying to an earlier plain-text message: that message may not be
+        // in the AI's conversation history at all (e.g. a scheduled reminder
+        // sent directly via sendText), so pass its content along explicitly.
+        const quotedPlainText = quoted?.conversation || quoted?.extendedTextMessage?.text || '';
+        const textForAI = quotedPlainText ? `[Replying to: "${quotedPlainText}"]\n${text}` : text;
+
+        const reply = await withTimeout(generateReply(jid, textForAI), 'AI reply', 60_000);
         await sendText(jid, reply);
         console.log(`🤖 bot: ${reply}`);
       } catch (err) {

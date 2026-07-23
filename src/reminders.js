@@ -13,10 +13,17 @@ export function startReminderChecker(sendText) {
     try {
       const due = await getDueReminders(new Date().toISOString());
       for (const r of due) {
-        await markReminderFired(r.id);
-        const sent = await sendText(r.jid, `⏰ Reminder: ${r.text}`);
-        if (r.escalate) watchMessage(sent?.key?.id, r.jid, r.text);
-        console.log(`⏰ Fired reminder #${r.id}: ${r.text}`);
+        try {
+          const sent = await sendText(r.jid, `⏰ Reminder: ${r.text}`);
+          // Only mark fired after a successful send — if this throws (e.g.
+          // WhatsApp mid-reconnect), the reminder stays due and gets retried
+          // on the next poll instead of being silently lost.
+          await markReminderFired(r.id);
+          if (r.escalate) watchMessage(sent?.key?.id, r.jid, r.text);
+          console.log(`⏰ Fired reminder #${r.id}: ${r.text}`);
+        } catch (err) {
+          console.error(`Failed to send reminder #${r.id}, will retry next check:`, err);
+        }
       }
     } catch (err) {
       console.error('Reminder check failed:', err);

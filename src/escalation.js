@@ -1,4 +1,4 @@
-import { takeOverdue } from './callWatch.js';
+import { takeOverdue, clearWatch } from './callWatch.js';
 
 const CHECK_INTERVAL_MS = 20_000;
 const UNREAD_WINDOW_MS = 5 * 60 * 1000;
@@ -10,9 +10,10 @@ export function startEscalationChecker(sendText) {
     for (const w of overdue) {
       try {
         await sendText(w.jid, `⏰🔴 *Still haven't seen this?* ${w.label}`);
+        clearWatch(w.id);
         console.log(`🔔 Escalated unread reminder: ${w.label}`);
       } catch (err) {
-        console.error('Escalation send failed:', err);
+        console.error('Escalation send failed, will retry next check:', err);
       }
     }
   }, CHECK_INTERVAL_MS);
