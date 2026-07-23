@@ -1,6 +1,8 @@
 import http from 'http';
+import QRImage from 'qrcode';
 import { config } from './config.js';
 import { handleOAuthCallback } from './google.js';
+import { getCurrentQr } from './qrState.js';
 
 /**
  * Minimal HTTP server: handles the Google OAuth redirect and doubles as a
@@ -36,6 +38,24 @@ export function startServer(onDriveAuthed) {
         console.error('OAuth callback error:', err);
         res.writeHead(500, { 'Content-Type': 'text/html' });
         res.end('<h2>Something went wrong. Check the bot logs.</h2>');
+      }
+      return;
+    }
+
+    if (url.pathname === '/qr') {
+      const qr = getCurrentQr();
+      if (!qr) {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end('<h2>No QR pending right now — either already connected, or still starting up (refresh in a few seconds).</h2>');
+        return;
+      }
+      try {
+        const png = await QRImage.toBuffer(qr, { width: 512, margin: 2 });
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
+        res.end(png);
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'text/html' });
+        res.end(`<h2>Failed to render QR: ${err.message}</h2>`);
       }
       return;
     }

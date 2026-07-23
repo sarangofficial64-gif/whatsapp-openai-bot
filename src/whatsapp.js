@@ -20,6 +20,7 @@ import { uploadBuffer } from './drive.js';
 import { markRead } from './callWatch.js';
 import { storeItem, prepareTextItem, isDbConfigured } from './knowledge.js';
 import { extractPdfText } from './pdf.js';
+import { setCurrentQr } from './qrState.js';
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'warn' });
 
@@ -383,7 +384,9 @@ export async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
+      setCurrentQr(qr);
       console.log('\n📱 Scan this QR code in WhatsApp → Linked Devices:\n');
+      console.log(`   Or open ${config.publicUrl}/qr in a browser for a crisp, scannable image.\n`);
       qrcode.generate(qr, { small: true });
       const qrPath = path.resolve('qr.png');
       QRImage.toFile(qrPath, qr, { width: 512, margin: 2 })
@@ -392,6 +395,7 @@ export async function startBot() {
     }
 
     if (connection === 'open') {
+      setCurrentQr(null);
       console.log('✅ WhatsApp connected. Bot is live.');
       console.log(`🔒 Only replying to: ${config.allowedNumber}`);
     }
